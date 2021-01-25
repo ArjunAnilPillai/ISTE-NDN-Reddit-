@@ -1,0 +1,73 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Create Post</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../css/bootstrap.min.css?v2">
+        <link rel="stylesheet" href="../css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="../css/font-awesome.min.css">
+        <link rel="stylesheet" href="../css/main.css">
+        <link rel="stylesheet" href="../css/login.css">
+    </head>
+    <body onload="" class="clearfix">
+        <script type="text/javascript" src="../ndn-js/build/ndn.js"></script>
+        <script type="text/javascript">
+            var face = new Face({host: "localhost"});
+
+            function onTimeout(self,interest){
+                console.log("NDN-JS: TIMEOUT for " + interest.getName());
+            }
+            
+            // function onLoginData(self,interest,data){
+            //     var res = data.getContent().toString()
+            //     console.log(res);
+            //     if(res === "Authenticated"){
+            //         console.log("Login Success");
+            //         window.location.href = "home.html"
+            //     }else{
+            //         console.log("Login Failed");
+            //         document.getElementById('error').innerHTML = res + "<br/>"
+            //     }   
+            // }
+
+            function createPost(){
+                var ptitleVal = document.getElementById('ptitle').value;
+                var pimageVal = document.getElementById('pimage').value;
+                var post = {text:ptitleVal,imgURL:pimageVal};
+                interest = new Interest(new Name("/reddit/createPost").append(post.text));
+                interest.setMustBeFresh(true);
+                interest.setParameters(new Blob(JSON.stringify(post)));
+                face.expressInterest(interest,function(interest,data){
+                    onLoginData(self,interest,data);
+                },function(interest){
+                    onTimeout(self,interest);
+                });
+            }
+        </script>
+
+        <main>
+            <div class="container">
+                <div>
+                    <h3>Create Post: </h3>
+                    <hr>
+                </div>
+                <form id="form">
+                    <div class="form-group">
+                        <label for="ptitle">Post Title</label>
+                        <input type="text" class="form-control" id="ptitle" placeholder="Post Title: " >
+                    </div>
+                    <div class="form-group">
+                        <label for="pimage">Image</label>
+                        <input type="file" class="form-control" id="pimage" placeholder="Image: ">
+                    </div>
+                </form>
+                <button class="btn btn-blue" id="submit" onclick="createPost()">Submit</button>
+            </div>
+            
+            
+        </main>
+
+        <script src="../js/jquery.min.js"></script>
+        <script src="../js/login.js"></script>
+    </body>
+</html>
