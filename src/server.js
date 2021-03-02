@@ -1,6 +1,10 @@
 
 const MongoClient = require("mongodb").MongoClient;
 const ObjectId = require("mongodb").ObjectID;
+const mongoose = require("mongoose");
+const bcrypt = require('bcryptjs');
+const imageToBase64 = require('image-to-base64');
+
 
 
 //Adding ndnjs modules. Replace path here with approprite path to the ndn-js repository
@@ -11,6 +15,7 @@ var Blob = require('./ndn-js').Blob;
 var UnixTransport = require('./ndn-js').UnixTransport;
 var SafeBag = require('./ndn-js').SafeBag;
 var KeyChain = require('./ndn-js').KeyChain;
+
 
 //Private and Public keys for ndn
 var DEFAULT_RSA_PUBLIC_KEY_DER = new Buffer([
@@ -117,7 +122,7 @@ var DEFAULT_RSA_PRIVATE_KEY_DER = new Buffer([
 ]);
 
 //Mongo db Databse URL
-const CONNECTION_URL = "mongodb+srv://admin:admin@freecluster.k5dgb.mongodb.net/user_ndn?retryWrites=true&w=majority";
+const CONNECTION_URL = "mongodb+srv://rahul123:1234@cluster0.3oxln.mongodb.net/example?retryWrites=true&w=majority";
 const DATABASE_NAME = "example";
 var database, collection;
 MongoClient.connect(CONNECTION_URL, { useNewUrlParser: true }, (error, client) => {
@@ -127,78 +132,215 @@ MongoClient.connect(CONNECTION_URL, { useNewUrlParser: true }, (error, client) =
 
         database = client.db(DATABASE_NAME);
         collection = database.collection("user_ndn");
+    
+    
         console.log("Connected to MongoDB");
-    });
+});
+//connecting to mongoose
+mongoose.connect(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology:true  })
+    .then(()=>console.log("Mongoose Connected"))
+    .catch(err => console.log(err))
+
+//importing User model
+const User = require('./models/User');
 
 
 //Definition of onData functions for the various prefix to be registered
-function onRegister(prefix, interest, face, interestFilterId, filter){
+function onRegister(prefix, interest, face, interestFilterId, filter) {
     var data = new Data(interest.getName());
-
-    var user = JSON.parse(interest.getParameters());
+    var { username, email, password } = JSON.parse(interest.getParameters());
     var content;
-    collection.insertOne({"email":user.email,"password":user.password,"username":user.username}, (error, result) => {
-        if(error) {
-            content = "Failed to Register User";
-            console.log("write fail");
+    
+    
+    User.findOne({ email: email }, (user) => {
+        if (user) {
+            //user already exists
+            content = "user already exists!";
+            console.log("User exists already");
             data.setContent(content);
+            keyChain.sign(data, function () {
+                try {
+                    console.log("...");
+                    console.log("sent content" + content);
+                    face.putData(data);
+                }
+                catch (e) {
+                    console.log(e.toString());
+                }
+            })
+                                
         }
-        else{
-            content = "Success";
-            console.log("Register successful");
-            data.setContent(content);
-        }
-        data.getMetaInfo().setFreshnessPeriod(10000);
-        keyChain.sign(data, function() {
-        try {
-            //console.log("Sent content " + content);
-            face.putData(data);
-        } catch (e) {
-            console.log(e.toString());
+        else {
+            const newUser = new User({
+                username,
+                email,
+                password
+            });
+            //hashing the password
+            bcrypt.genSalt(10, (err, salt) => {
+                bcrypt.hash(password, salt, (err, hash) => {
+                    if (err) console.log(err);
+                    else {
+                        newUser.password = hash;
+                        newUser.save(function (err) {
+                            if (err) console.log(err);
+                            else {
+                                console.log("Registered Successfully!");
+                                content = "Success";
+                                data.setContent(content);
+                                console.log("Inside .save");
+                                data.getMetaInfo().setFreshnessPeriod(10000);
+                                keyChain.sign(data, function () {
+                                try {
+                                    console.log("...");
+                                    console.log("sent content" + content);
+                                    face.putData(data);
+
+                                }
+                                catch (e) {
+                                    console.log(e.toString());
+                                }
+                                })
+
+
+                            }
+                        });
+                    }
+                })
+            })
+            
+
         }
     });
-    });
+        
+    
 }
+
+
+
+    
+
 
 function onLogin(prefix, interest, face, interestFilterId, filter){
     var data = new Data(interest.getName());
-
-    var user = JSON.parse(interest.getParameters());
+    
+    var {username,password} = JSON.parse(interest.getParameters());
     var content;
-    collection.findOne({"username":user.username},(error,result) => {
-        if(error){
+    User.findOne({ "username": username }, (error, result) => {
+        if (error) {
             content = "Database error";
             console.log("Database error");
             data.setContent(content);
+            data.getMetaInfo().setFreshnessPeriod(10000);
+            keyChain.sign(data, function() {
+                try {
+                     console.log("Sent content " + content);
+                     face.putData(data);
+                    } catch (e) {
+                     console.log(e.toString());
+                    }
+            });
+
         }
-        else if(result == null){
+        else if (result == null) {
             content = "User does not exist";
             console.log("No such user");
             data.setContent(content);
+            data.getMetaInfo().setFreshnessPeriod(10000);
+            keyChain.sign(data, function() {
+                try {
+                     console.log("Sent content " + content);
+                     face.putData(data);
+                     } catch (e) {
+                         console.log(e.toString());
+                        }
+                    });            
         }
-        else{
-            if(result.password  ===  user.password){
-                content = "Authenticated";
-                console.log("Auth successful");
-                data.setContent(content);
-            }
-            else{
-                content = "Wrong Password";
-                console.log("Wrong Password");
-                data.setContent(content);
-            }
+        else {
+            bcrypt.compare(password, result.password, (err, isMatch) => {
+                if (err) throw err;
+                if (isMatch) {
+                    console.log("Login Successful!");
+                    content = "Authenticated";
+                    data.setContent(content);
+                    data.getMetaInfo().setFreshnessPeriod(10000);
+                    keyChain.sign(data, function() {
+                        try {
+                            console.log("Sent content " + content);
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                    });
+                }
+                else {
+                    console.log("Incorrect Password!");
+                    content = "Incorrect Password";
+                    data.setContent(content);
+                    data.getMetaInfo().setFreshnessPeriod(10000);
+                    keyChain.sign(data, function() {
+                        try {
+                            console.log("Sent content " + content);
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                    });
+
+                }
+                
+        })
+
+        
         }
-        data.getMetaInfo().setFreshnessPeriod(10000);
-        keyChain.sign(data, function() {
-            try {
-                //console.log("Sent content " + content);
-                face.putData(data);
-            } catch (e) {
-                console.log(e.toString());
-            }
-        });
+        
     });
 }
+
+
+
+
+
+
+//call back for registering the post name
+function onPost(prefix, interest, face, interestFilterId, filter) {
+    var data = new Data(interest.getName());
+    
+    database.collection("post").find({}).toArray((err, res) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            console.log(res);
+            imageToBase64(res[0].img).then((response) => {
+                console.log(response[0]);
+                res[0].img = `data:image/jpg;base64,${response}`;
+                console.log(res);
+                data.setContent(JSON.stringify(res));
+                data.getMetaInfo().setFreshnessPeriod(10000);
+                    keyChain.sign(data, function() {
+                        try {
+                            console.log("Sent content!");
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                    });
+
+            }
+            );
+        }
+    });
+    
+    
+    
+    
+    
+    
+
+};
+
+
 
 //call back function in case prefix registration fails
 function onRegisterFailed(prefix){
@@ -218,4 +360,6 @@ keyChain.importSafeBag(new SafeBag
 face.setCommandSigningInfo(keyChain, keyChain.getDefaultCertificateName());
 
 face.registerPrefix(new Name("/reddit/login"),onLogin,onRegisterFailed);
-face.registerPrefix(new Name("/reddit/register"),onRegister,onRegisterFailed);
+face.registerPrefix(new Name("/reddit/register"), onRegister, onRegisterFailed);
+face.registerPrefix(new Name("/reddit/post"), onPost, onRegisterFailed);
+

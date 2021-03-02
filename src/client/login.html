@@ -7,13 +7,13 @@
     <link rel="stylesheet" href="../css/bootstrap.min.css?v2">
     <link rel="stylesheet" href="../css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="../css/font-awesome.min.css">
-    <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="../css/login.css">
+   
     
   </head>
   <body onload="" class="clearfix" style="background-color: #C8D4DF">
   	<script type="text/javascript" src="../ndn-js/build/ndn.js"></script>
         <script type="text/javascript">
+
             var face = new Face({host: "localhost"});
 
             function onTimeout(self,interest){
@@ -21,11 +21,11 @@
             }
              
             function onLoginData(self,interest,data){
-                var res = data.getContent().toString()
+                var res = data.getContent().toString();
                 console.log(res);
                 if(res === "Authenticated"){
                     console.log("Login Success");
-                    window.location.href = "home.html"
+                    window.location.href = "post.html"
                 }else{
                     console.log("Login Failed");
                     document.getElementById('error').innerHTML = res + "<br/>"
