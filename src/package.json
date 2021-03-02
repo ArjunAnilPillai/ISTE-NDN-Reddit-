@@ -10,6 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mongodb": "^3.6.3"
+    "bcryptjs": "^2.4.3",
+    "image-to-base64": "^2.1.1",
+    "mongodb": "^3.6.3",
+    "mongoose": "^5.11.14"
   }
 }

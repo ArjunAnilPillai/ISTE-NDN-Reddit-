@@ -38,7 +38,26 @@
                 var passwordVal = document.getElementById('password').value;
                 var usernameVal = document.getElementById('user').value;
                 var password2Val = document.getElementById('repeat_password').value;
-                if (passwordVal === password2Val){
+                let errors=[];
+                if (!emailVal || !usernameVal || !passwordVal || !password2Val) {
+                    errors.push({msg:'Please fill all required fields'});
+                }
+
+                if (passwordVal !== password2Val) {
+                    errors.push({msg:'Passwords do not match'});
+                }
+
+                if (passwordVal.length <6) {
+                    errors.push({ msg: 'Password should be atleast 6 characters in length' });
+                }
+                console.log(errors);
+                if(errors.length>0){
+                  for(let i=0;i<errors.length;i++){
+                    document.getElementById('error').innerHTML=`${errors[i].msg}<br/>`;
+                  }
+                }
+                else{
+                  document.getElementById('error').innerHTML="";
                   var user = {email:emailVal,username:usernameVal,password:passwordVal};
                   interest = new Interest(new Name("/reddit/register").append(user.username));
                   interest.setMustBeFresh(true);
@@ -48,9 +67,6 @@
                   },function(interest){
                       onTimeout(self,interest);
                   });
-                }
-                else{
-                  document.getElementById('error').innerHTML = "Passwords do not match<br/>"
                 }
                 
             }
