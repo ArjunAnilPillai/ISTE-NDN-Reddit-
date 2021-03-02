@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const imageToBase64 = require('image-to-base64');
 
 
+var Posts = require('./models/postschema') ;
 
 //Adding ndnjs modules. Replace path here with approprite path to the ndn-js repository
 var Face = require('./ndn-js').Face;
@@ -221,15 +222,43 @@ function onRegister(prefix, interest, face, interestFilterId, filter) {
     
 
 
+
+function onPostUpload(prefix, interest, face, interestFilterId, filter){
+    var data = new Data(interest.getName());
+
+    var post = JSON.parse(interest.getParameters());
+    var content;
+    const newPost = new Posts(post);
+    newPost.save(function(err, newPost) {
+        if (err) {
+            content="Could not post!"
+            return console.error(err);
+        }
+        content = "Posted!";
+        data.setContent(content);
+        data.getMetaInfo().setFreshnessPeriod(10000);
+        keyChain.sign(data, function() {
+            try {
+                //console.log("Sent content " + content);
+                face.putData(data);
+            } catch (e) {
+                console.log(e.toString());
+            }
+        });
+      });
+        
+};
+
 function onLogin(prefix, interest, face, interestFilterId, filter){
     var data = new Data(interest.getName());
-    
-    var {username,password} = JSON.parse(interest.getParameters());
+
+    var post = JSON.parse(interest.getParameters());
     var content;
-    User.findOne({ "username": username }, (error, result) => {
-        if (error) {
+    
+    collection.findOne({"username":user.username},(error,result) => {
+        if(error){
             content = "Database error";
-            console.log("Database error");
+            
             data.setContent(content);
             data.getMetaInfo().setFreshnessPeriod(10000);
             keyChain.sign(data, function() {
@@ -244,7 +273,7 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
         }
         else if (result == null) {
             content = "User does not exist";
-            console.log("No such user");
+           
             data.setContent(content);
             data.getMetaInfo().setFreshnessPeriod(10000);
             keyChain.sign(data, function() {
@@ -260,7 +289,7 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
             bcrypt.compare(password, result.password, (err, isMatch) => {
                 if (err) throw err;
                 if (isMatch) {
-                    console.log("Login Successful!");
+                    
                     content = "Authenticated";
                     data.setContent(content);
                     data.getMetaInfo().setFreshnessPeriod(10000);
@@ -274,7 +303,7 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
                     });
                 }
                 else {
-                    console.log("Incorrect Password!");
+                    
                     content = "Incorrect Password";
                     data.setContent(content);
                     data.getMetaInfo().setFreshnessPeriod(10000);
@@ -311,9 +340,9 @@ function onPost(prefix, interest, face, interestFilterId, filter) {
             console.log(err);
         }
         else {
-            console.log(res);
+            
             imageToBase64(res[0].img).then((response) => {
-                console.log(response[0]);
+                
                 res[0].img = `data:image/jpg;base64,${response}`;
                 console.log(res);
                 data.setContent(JSON.stringify(res));
@@ -332,12 +361,6 @@ function onPost(prefix, interest, face, interestFilterId, filter) {
         }
     });
     
-    
-    
-    
-    
-    
-
 };
 
 
@@ -362,4 +385,5 @@ face.setCommandSigningInfo(keyChain, keyChain.getDefaultCertificateName());
 face.registerPrefix(new Name("/reddit/login"),onLogin,onRegisterFailed);
 face.registerPrefix(new Name("/reddit/register"), onRegister, onRegisterFailed);
 face.registerPrefix(new Name("/reddit/post"), onPost, onRegisterFailed);
+face.registerPrefix(new Name("/reddit/createPost"), onPostUpload, onRegisterFailed);
 
