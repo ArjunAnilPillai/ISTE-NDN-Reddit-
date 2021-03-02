@@ -1,7 +1,7 @@
 
 const MongoClient = require("mongodb").MongoClient;
 const ObjectId = require("mongodb").ObjectID;
-
+var posts = require('post') ;
 
 //Adding ndnjs modules. Replace path here with approprite path to the ndn-js repository
 var Face = require('./ndn-js').Face;
@@ -160,11 +160,36 @@ function onRegister(prefix, interest, face, interestFilterId, filter){
     });
 }
 
+function onPost(prefix, interest, face, interestFilterId, filter){
+    var data = new Data(interest.getName());
+
+    var post = JSON.parse(interest.getParameters());
+    var content;
+    const newPost = new Posts(post);
+    newPost.save(function(err, newPost) {
+        if (err) {
+            content="Could not post!"
+            return console.error(err);
+        }
+        content="Posted!";
+      });
+        data.getMetaInfo().setFreshnessPeriod(10000);
+        keyChain.sign(data, function() {
+            try {
+                //console.log("Sent content " + content);
+                face.putData(data);
+            } catch (e) {
+                console.log(e.toString());
+            }
+        });
+};
+
 function onLogin(prefix, interest, face, interestFilterId, filter){
     var data = new Data(interest.getName());
 
-    var user = JSON.parse(interest.getParameters());
+    var post = JSON.parse(interest.getParameters());
     var content;
+    
     collection.findOne({"username":user.username},(error,result) => {
         if(error){
             content = "Database error";
