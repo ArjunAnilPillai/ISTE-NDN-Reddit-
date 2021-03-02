@@ -249,16 +249,17 @@ function onPostUpload(prefix, interest, face, interestFilterId, filter){
         
 };
 
+
+
 function onLogin(prefix, interest, face, interestFilterId, filter){
     var data = new Data(interest.getName());
-
-    var post = JSON.parse(interest.getParameters());
-    var content;
     
-    collection.findOne({"username":user.username},(error,result) => {
-        if(error){
+    var {username,password} = JSON.parse(interest.getParameters());
+    var content;
+    User.findOne({ "username": username }, (error, result) => {
+        if (error) {
             content = "Database error";
-            
+            console.log("Database error");
             data.setContent(content);
             data.getMetaInfo().setFreshnessPeriod(10000);
             keyChain.sign(data, function() {
@@ -273,7 +274,7 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
         }
         else if (result == null) {
             content = "User does not exist";
-           
+            console.log("No such user");
             data.setContent(content);
             data.getMetaInfo().setFreshnessPeriod(10000);
             keyChain.sign(data, function() {
@@ -289,7 +290,7 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
             bcrypt.compare(password, result.password, (err, isMatch) => {
                 if (err) throw err;
                 if (isMatch) {
-                    
+                    console.log("Login Successful!");
                     content = "Authenticated";
                     data.setContent(content);
                     data.getMetaInfo().setFreshnessPeriod(10000);
@@ -303,7 +304,7 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
                     });
                 }
                 else {
-                    
+                    console.log("Incorrect Password!");
                     content = "Incorrect Password";
                     data.setContent(content);
                     data.getMetaInfo().setFreshnessPeriod(10000);
