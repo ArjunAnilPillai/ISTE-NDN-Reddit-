@@ -17,7 +17,10 @@
             function onTimeout(self,interest){
                 console.log("NDN-JS: TIMEOUT for " + interest.getName());
             }
-            
+            function onPostUploadData(self,interest,data){
+                var res=data.getContent().toString();
+                console.log(res);
+            }
             // function onLoginData(self,interest,data){
             //     var res = data.getContent().toString()
             //     console.log(res);
@@ -38,7 +41,7 @@
                 interest.setMustBeFresh(true);
                 interest.setParameters(new Blob(JSON.stringify(post)));
                 face.expressInterest(interest,function(interest,data){
-                    onLoginData(self,interest,data);
+                    onPostUploadData(self,interest,data);
                 },function(interest){
                     onTimeout(self,interest);
                 });
