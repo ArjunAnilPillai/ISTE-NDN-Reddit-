@@ -12,7 +12,8 @@
   </head>
   <body onload="" class="clearfix" style="background-color: #C8D4DF">
     <script type="text/javascript" src="../ndn-js/build/ndn.js"></script>
-        <script type="text/javascript">
+    <script type="text/javascript" src="../js/signin.js"></script>
+           <!--script type="text/javascript">
             var face = new Face({host: "localhost"});
 
              
@@ -38,26 +39,7 @@
                 var passwordVal = document.getElementById('password').value;
                 var usernameVal = document.getElementById('user').value;
                 var password2Val = document.getElementById('repeat_password').value;
-                let errors=[];
-                if (!emailVal || !usernameVal || !passwordVal || !password2Val) {
-                    errors.push({msg:'Please fill all required fields'});
-                }
-
-                if (passwordVal !== password2Val) {
-                    errors.push({msg:'Passwords do not match'});
-                }
-
-                if (passwordVal.length <6) {
-                    errors.push({ msg: 'Password should be atleast 6 characters in length' });
-                }
-                console.log(errors);
-                if(errors.length>0){
-                  for(let i=0;i<errors.length;i++){
-                    document.getElementById('error').innerHTML=`${errors[i].msg}<br/>`;
-                  }
-                }
-                else{
-                  document.getElementById('error').innerHTML="";
+                if (passwordVal === password2Val){
                   var user = {email:emailVal,username:usernameVal,password:passwordVal};
                   interest = new Interest(new Name("/reddit/register").append(user.username));
                   interest.setMustBeFresh(true);
@@ -68,9 +50,12 @@
                       onTimeout(self,interest);
                   });
                 }
+                else{
+                  document.getElementById('error').innerHTML = "Passwords do not match<br/>"
+                }
                 
             }
-        </script>
+        </script-->
     <main>
       <div class="container">
         <div class="col-md-9 center-block vertical-align">
@@ -85,7 +70,7 @@
             <div class="col-md-5 col-sm-12 col-xs-12">
               <div class="login-container clearfix">
                 <a href="/" class="logolink">
-                  <img src="../img/reddit-logo.png" class="logotext" width="150" >
+                  <img src="../img/Reddit-Logo.png" class="logotext" width="150" >
                 </a>
                 <p class="text-center description-page">The front page of internet.<br>Create your account below:</p>
                 <div class="bg-danger">

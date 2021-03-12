@@ -1,0 +1,78 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Home</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <link rel="stylesheet" href="../css/bootstrap.min.css">
+        <link rel="stylesheet" href="../css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="../css/font-awesome.min.css">
+        <link rel="stylesheet" href="../css/main.css">
+        <link rel="stylesheet" href="../css/login.css">
+    </head>
+    <body onload="" >
+        <script type="text/javascript" src="../ndn-js/build/ndn.js"></script>
+        <script type="text/javascript" src="../js/cookie.js"></script>
+        <script type="text/javascript" src="../js/posts.js"></script>
+        <script type="text/javascript" src="../js/autocomplete.js"></script>
+            
+            <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light d-flex">
+                <a class="navbar-brand p-2" href="#"><img src="../img/Reddit-Logo.png" width="30" height="30" alt="" style="margin-right: 10px;" class="d-inline-block"/>NDN-Reddit</a>
+                <div class=" d-flex justify-content-between searchbar">
+                    <form role="form" autocomplete="off">
+                        <div class="autocomplete input-group">
+                            <input type="input" class= "form-control" id="txt-search" placeholder="Enter user">
+                        </div>
+                    </form>
+                    <div id="filter-user" class="row result">
+                    </div>
+            
+                </div>
+
+                <span class="navbar-text ml-auto">
+                    <ul class="nav">
+                        <li class="nav-item" style="padding: 12px; font-size: large; color: black;">
+                            <p id="usr"></p>   
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active button" style="margin-right: 10px;" aria-current="page" href="createPost.html">Create Post + </a>   
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active button" style="margin-right: 10px;" aria-current="page" onclick="viewProfile()" >Profile</a> 
+                        </li>
+                    </ul>
+                   
+                </span>
+
+                
+            </nav>
+            
+            <main class="container" id="display">
+                <!--div class="card border-dark" style="width: 80rem;">
+                    <h5 class="card-header">r/{Subreddit Name} | Posted by {poster} | Posted {x hours ago}</h5>
+                    <div class="card-body">
+                      <h3 class="card-title">{Post Title}</h3>
+                    </div>
+                    <hr style="margin: 0 0 20 0;">
+                    <img class="card-img-bottom" height="100%" width="80%" style="padding-left: 10%; padding-right: 10%;" src="../img/Reddit-Logo.png" alt="Post Image">
+                    <div class="card-footer d-flex flex-row"> 
+                        <a href=""><i class="fa fa-arrow-up fa-2x" style="color:black"></i></a> <h4 class="p-2">    0<h4>
+                    </div>
+                  </div>
+                  <div class="card" style="width: 80rem;">
+                    <h5 class="card-header">r/{Subreddit Name} | Posted by {poster} | Posted {x hours ago}</h5>
+                    <div class="card-body">
+                      <h3 class="card-title">{Post Title}</h3>
+                    </div>
+                    <hr style="margin: 0 0 20 0;">
+                    <img class="card-img-bottom" height="100%" width="80%" style="padding-left: 10%; padding-right: 10%;" src="../img/reddit.png" alt="Post Image">
+                    <div class="card-footer d-flex flex-row"> 
+                        <a href="createPost.html"><i class="fa fa-arrow-up fa-2x" style="color:black"></i></a> <h4 class="p-2">    0<h4>
+                    </div>
+                  </div-->
+            </main>
+            
+        <script src="../js/jquery.min.js"></script>
+        <script src="../js/login.js"></script>
+    </body>
+</html>

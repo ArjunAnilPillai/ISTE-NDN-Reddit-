@@ -7,13 +7,15 @@
     <link rel="stylesheet" href="../css/bootstrap.min.css?v2">
     <link rel="stylesheet" href="../css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="../css/font-awesome.min.css">
-   
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/login.css">
     
   </head>
   <body onload="" class="clearfix" style="background-color: #C8D4DF">
   	<script type="text/javascript" src="../ndn-js/build/ndn.js"></script>
-        <script type="text/javascript">
-
+    <script type="text/javascript" src="../js/cookie.js"></script>
+    <script type="text/javascript" src="../js/login.js"></script>
+        <!--script type="text/javascript">
             var face = new Face({host: "localhost"});
 
             function onTimeout(self,interest){
@@ -21,11 +23,11 @@
             }
              
             function onLoginData(self,interest,data){
-                var res = data.getContent().toString();
+                var res = data.getContent().toString()
                 console.log(res);
                 if(res === "Authenticated"){
                     console.log("Login Success");
-                    window.location.href = "post.html"
+                    window.location.href = "home.html"
                 }else{
                     console.log("Login Failed");
                     document.getElementById('error').innerHTML = res + "<br/>"
@@ -46,7 +48,7 @@
                 });
             }
 
-        </script>
+        </script-->
     <main>
       <div class="container" >
         <div class="col-md-9 center-block vertical-align">
@@ -61,7 +63,7 @@
             <div class="col-md-5 col-sm-12 col-xs-12">
               <div class="login-container clearfix">
                 <a href="/" class="logolink">
-                  <img src="../img/reddit-logo.png" class="logotext" width="150">
+                  <img src="../img/Reddit-Logo.png" class="logotext" width="150">
                 </a>
                 <p class="text-center description-page">The front page of internet.<br>Please insert your data to login:</p>
                 <div class="bg-danger">

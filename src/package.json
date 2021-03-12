@@ -11,8 +11,13 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "filereader": "^0.10.3",
+    "fs": "0.0.1-security",
+    "guid": "0.0.12",
     "image-to-base64": "^2.1.1",
-    "mongodb": "^3.6.3",
-    "mongoose": "^5.11.14"
+    "mongodb": "^3.6.4",
+    "mongoose": "^5.11.14",
+    "path": "^0.12.7",
+    "util": "^0.12.3"
   }
 }

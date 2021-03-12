@@ -4,8 +4,11 @@ const ObjectId = require("mongodb").ObjectID;
 const mongoose = require("mongoose");
 const bcrypt = require('bcryptjs');
 const imageToBase64 = require('image-to-base64');
-
-
+var fs = require('fs');
+const Guid = require('guid');
+const path = require('path');
+const FileReader = require('filereader');
+const util = require('util')
 var Posts = require('./models/postschema') ;
 
 //Adding ndnjs modules. Replace path here with approprite path to the ndn-js repository
@@ -123,8 +126,8 @@ var DEFAULT_RSA_PRIVATE_KEY_DER = new Buffer([
 ]);
 
 //Mongo db Databse URL
-const CONNECTION_URL = "mongodb+srv://rahul123:1234@cluster0.3oxln.mongodb.net/example?retryWrites=true&w=majority";
-const DATABASE_NAME = "example";
+const CONNECTION_URL = "mongodb+srv://admin:admin@freecluster.k5dgb.mongodb.net/ndn?retryWrites=true&w=majority";
+const DATABASE_NAME = "ndn";
 var database, collection;
 MongoClient.connect(CONNECTION_URL, { useNewUrlParser: true }, (error, client) => {
         if(error) {
@@ -132,7 +135,7 @@ MongoClient.connect(CONNECTION_URL, { useNewUrlParser: true }, (error, client) =
         }
 
         database = client.db(DATABASE_NAME);
-        collection = database.collection("user_ndn");
+        //collection = database.collection("user_ndn");
     
     
         console.log("Connected to MongoDB");
@@ -145,24 +148,26 @@ mongoose.connect(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology:tru
 //importing User model
 const User = require('./models/User');
 
-
+var postDict = {};
+var picDict = {};
+var posts = [];
+var user= {};
+var userPosts = {};
 //Definition of onData functions for the various prefix to be registered
 function onRegister(prefix, interest, face, interestFilterId, filter) {
     var data = new Data(interest.getName());
     var { username, email, password } = JSON.parse(interest.getParameters());
     var content;
     
-    
-    User.findOne({ email: email }, (user) => {
+    User.findOne({ username: username }, (err,user) => {
         if (user) {
             //user already exists
-            content = "user already exists!";
-            console.log("User exists already");
+            content = "User Already Exists";
             data.setContent(content);
+            data.getMetaInfo().setFreshnessPeriod(10000);
             keyChain.sign(data, function () {
                 try {
-                    console.log("...");
-                    console.log("sent content" + content);
+                    console.log(content);
                     face.putData(data);
                 }
                 catch (e) {
@@ -186,15 +191,14 @@ function onRegister(prefix, interest, face, interestFilterId, filter) {
                         newUser.save(function (err) {
                             if (err) console.log(err);
                             else {
-                                console.log("Registered Successfully!");
-                                content = "Success";
+                                
+                                content = "Registered Successfully";
                                 data.setContent(content);
-                                console.log("Inside .save");
+                                
                                 data.getMetaInfo().setFreshnessPeriod(10000);
                                 keyChain.sign(data, function () {
                                 try {
-                                    console.log("...");
-                                    console.log("sent content" + content);
+                                    console.log(content);
                                     face.putData(data);
 
                                 }
@@ -215,7 +219,7 @@ function onRegister(prefix, interest, face, interestFilterId, filter) {
     });
         
     
-}
+}       
 
 
 
@@ -225,41 +229,174 @@ function onRegister(prefix, interest, face, interestFilterId, filter) {
 
 function onPostUpload(prefix, interest, face, interestFilterId, filter){
     var data = new Data(interest.getName());
+    
+    var post = interest.getParameters();
+    var name = interest.getName().get(2).getValue().toString()
+    if(!(name in postDict))
+    {
+        postDict[name] = post.toString();
+    }
+    else{
+        postDict[name] = postDict[name].concat(post.toString());
+    }
+    if(postDict[name].charAt(postDict[name].length-1) === "}".charAt(0)){
+        var post = JSON.parse(postDict[name])
+        var img = post.img;
+        var guid = Guid.create();
+        var ext = img.split(';')[0].match(/jpeg|png|gif/)[0];
+        var image = img.replace(/^data:image\/\w+;base64,/, "");
+        var buf = new Buffer(image, 'base64');
+        var content;
+        fs.writeFile('media/post/' + guid + '.'+ext, buf,(err)=>{
+            if (err) {
+                content="Could not post!"
+                return console.error(err);
+                data.setContent(content);
+                data.getMetaInfo().setFreshnessPeriod(10000);
+                keyChain.sign(data, function() {
+                        try {                        //console.log("Sent content " + content);
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                });    
+            }
+            else{
+                
+                const newPost = new Posts({text:post.text,imgName:guid+'.'+ext,username:post.userName});
+                
+                newPost.save(function(err, newPost) {
+                    if (err) {
+                        content="Could not post!"
+                        return console.error(err);
+                    }
+                    content = "Posted!";
+                    data.setContent(content);
+                    data.getMetaInfo().setFreshnessPeriod(10000);
+                    keyChain.sign(data, function() {
+                        try {                        //console.log("Sent content " + content);
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                    });    
+                 });
 
-    var post = JSON.parse(interest.getParameters());
-    var content;
-    const newPost = new Posts(post);
-    newPost.save(function(err, newPost) {
-        if (err) {
-            content="Could not post!"
-            return console.error(err);
-        }
-        content = "Posted!";
-        data.setContent(content);
+            }
+            
+        });
+    }
+    else{
+        data.setContent("ACK");
         data.getMetaInfo().setFreshnessPeriod(10000);
         keyChain.sign(data, function() {
-            try {
-                //console.log("Sent content " + content);
+            try {                        //console.log("Sent content " + content);
                 face.putData(data);
             } catch (e) {
                 console.log(e.toString());
             }
-        });
-      });
+        });    
+    }
         
 };
 
 
-
-function onLogin(prefix, interest, face, interestFilterId, filter){
+function onPicUpload(prefix, interest, face, interestFilterId, filter){
     var data = new Data(interest.getName());
     
-    var {username,password} = JSON.parse(interest.getParameters());
+    var pic = interest.getParameters();
+    var username = interest.getName().get(2).getValue().toString();
+    var identifier = interest.getName().get(3).getValue().toString();
+    var name = username + identifier;
+    if(!(name in picDict))
+    {
+        picDict[name] = pic.toString();
+    }
+    else{
+        picDict[name] = picDict[name].concat(pic.toString());
+    }
+    if(picDict[name].charAt(picDict[name].length-1) === "}".charAt(0)){
+        var pic = JSON.parse(picDict[name])
+        var img = pic.img;
+        var guid = Guid.create();
+        var ext = img.split(';')[0].match(/jpeg|png|gif/)[0];
+        var image = img.replace(/^data:image\/\w+;base64,/, "");
+        var buf = new Buffer(image, 'base64');
+        var content;
+        fs.writeFile('media/profile/' + guid + '.'+ext, buf,(err)=>{
+            if (err) {
+                content="Could not post!"
+                return console.error(err);
+                data.setContent(content);
+                data.getMetaInfo().setFreshnessPeriod(10000);
+                keyChain.sign(data, function() {
+                        try {                        //console.log("Sent content " + content);
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                });    
+            }
+            else{
+                User.findOneAndUpdate({username:pic.username},{$set:{profilePic:guid+'.'+ext}},{upsert:false},function(err,res){
+                    if (err) {
+                        content="Could not update!"
+                        return console.error(err);
+                    }
+                    content = "Profile Picture Updated";
+                    data.setContent(content);
+                    data.getMetaInfo().setFreshnessPeriod(10000);
+                    keyChain.sign(data, function() {
+                        try {                        //console.log("Sent content " + content);
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                    });    
+                });
+                
+                
+
+            }
+            
+        });
+    }
+    else{
+        data.setContent("ACK");
+        data.getMetaInfo().setFreshnessPeriod(10000);
+        keyChain.sign(data, function() {
+            try {                        //console.log("Sent content " + content);
+                face.putData(data);
+            } catch (e) {
+                console.log(e.toString());
+            }
+        });    
+    }
+        
+};
+
+
+function onProfile(prefix, interest, face, interestFilterId, filter){
+    
+    var data = new Data(interest.getName());
+    user = {};
+    var username = interest.getName().get(-1).getValue().toString();
     var content;
     User.findOne({ "username": username }, (error, result) => {
-        if (error) {
-            content = "Database error";
-            console.log("Database error");
+        if(error){
+            content = "Database Error";
+            data.setContent(content);
+            data.getMetaInfo().setFreshnessPeriod(10000);
+            keyChain.sign(data, function() {
+                try {
+                     face.putData(data);
+                    } catch (e) {
+                     console.log(e.toString());
+                    }
+            });
+        }
+        else if(result == null){
+            content = "User does not exist"
             data.setContent(content);
             data.getMetaInfo().setFreshnessPeriod(10000);
             keyChain.sign(data, function() {
@@ -270,16 +407,72 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
                      console.log(e.toString());
                     }
             });
+        }
+        else{
+            fs.readFile('media/profile/' + result.profilePic, gotFile.bind(result));
+            function gotFile(err,data){
+                if(err)
+                {
+                    return;
+                }
+                let extensionName = result.profilePic.split('.')[1];
+                //convert image file to base64-encoded string
+                let base64Image = new Buffer(data, 'binary').toString('base64');
+                //combine all strings
+                let imgSrcString = 'data:image/'+extensionName+';base64,'+base64Image;
+                        
+
+                user["username"]= result.username;
+                user["email"] = result.email;
+                user['pic'] = imgSrcString;
+                var content = JSON.stringify(user);
+                var packets = Math.ceil(content.length/5000);
+                
+                var data = new Data(interest.getName());
+                data.setContent(packets.toString());
+                data.getMetaInfo().setFreshnessPeriod(10000);
+                keyChain.sign(data, function() {
+                    try {
+                        face.putData(data);
+                    } catch (e) {
+                        console.log(e.toString());
+                    }
+                });      
+            }
+            
 
         }
-        else if (result == null) {
-            content = "User does not exist";
-            console.log("No such user");
+    });
+}
+
+
+function onLogin(prefix, interest, face, interestFilterId, filter){
+    var data = new Data(interest.getName());
+    
+    var {username,password} = JSON.parse(interest.getParameters());
+    var content;
+    User.findOne({ "username": username }, (error, result) => {
+        if (error) {
+            content = "Database error";
             data.setContent(content);
             data.getMetaInfo().setFreshnessPeriod(10000);
             keyChain.sign(data, function() {
                 try {
-                     console.log("Sent content " + content);
+                     console.log(content);
+                     face.putData(data);
+                    } catch (e) {
+                     console.log(e.toString());
+                    }
+            });
+
+        }
+        else if (result == null) {
+            content = "User does not exist";
+            data.setContent(content);
+            data.getMetaInfo().setFreshnessPeriod(10000);
+            keyChain.sign(data, function() {
+                try {
+                     console.log(content);
                      face.putData(data);
                      } catch (e) {
                          console.log(e.toString());
@@ -290,13 +483,12 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
             bcrypt.compare(password, result.password, (err, isMatch) => {
                 if (err) throw err;
                 if (isMatch) {
-                    console.log("Login Successful!");
                     content = "Authenticated";
                     data.setContent(content);
                     data.getMetaInfo().setFreshnessPeriod(10000);
                     keyChain.sign(data, function() {
                         try {
-                            console.log("Sent content " + content);
+                            console.log(content);
                             face.putData(data);
                         } catch (e) {
                             console.log(e.toString());
@@ -304,13 +496,12 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
                     });
                 }
                 else {
-                    console.log("Incorrect Password!");
                     content = "Incorrect Password";
                     data.setContent(content);
                     data.getMetaInfo().setFreshnessPeriod(10000);
                     keyChain.sign(data, function() {
                         try {
-                            console.log("Sent content " + content);
+                            console.log(content);
                             face.putData(data);
                         } catch (e) {
                             console.log(e.toString());
@@ -327,44 +518,327 @@ function onLogin(prefix, interest, face, interestFilterId, filter){
     });
 }
 
-
-
-
-
-
-//call back for registering the post name
-function onPost(prefix, interest, face, interestFilterId, filter) {
+function onLike(prefix,interest,face,interestFilterId,filter){
     var data = new Data(interest.getName());
-    
-    database.collection("post").find({}).toArray((err, res) => {
-        if (err) {
-            console.log(err);
+    var username = interest.getName().get(-1).getValue().toString();
+    var postname = interest.getName().get(-2).getValue().toString();
+    database.collection("posts").find({text:postname}).toArray((err, res) => {
+        if(err){
+            console.log("Database error");
+            data.setContent("Post not found");
+            data.getMetaInfo().setFreshnessPeriod(10000);
+            keyChain.sign(data, function() {
+                try {
+                    face.putData(data);
+                } catch (e) {
+                    console.log(e.toString());
+                }
+            }); 
         }
-        else {
+        else{
             
-            imageToBase64(res[0].img).then((response) => {
-                
-                res[0].img = `data:image/jpg;base64,${response}`;
-                console.log(res);
-                data.setContent(JSON.stringify(res));
-                data.getMetaInfo().setFreshnessPeriod(10000);
+            
+            res[0].like.push(username);
+            var newArr = res[0].like;
+            database.collection("posts").findOneAndUpdate({text:postname},{$set:{like:newArr}},{upsert:false},function(err,res){
+                if (err) {
+                    content="Could not update"
+                    console.log(err);
+                    data.setContent(content);
+                    data.getMetaInfo().setFreshnessPeriod(10000);
                     keyChain.sign(data, function() {
-                        try {
-                            console.log("Sent content!");
+                        try {                        //console.log("Sent content " + content);
                             face.putData(data);
                         } catch (e) {
                             console.log(e.toString());
                         }
-                    });
+                    });    
+                }else{
+                    content = "Liked";
+                    data.setContent(content);
+                    data.getMetaInfo().setFreshnessPeriod(10000);
+                    keyChain.sign(data, function() {
+                        try {                        //console.log("Sent content " + content);
+                            face.putData(data);
+                        } catch (e) {
+                            console.log(e.toString());
+                        }
+                    });    
+                }        
+            });
 
+
+            
+        }
+    });
+}
+
+function onProfilePackets(prefix,interest,face,interestFilterId,filter){
+    if(Object.keys(user).length !== 0){
+        var content = JSON.stringify(user);
+        
+        var packets = Math.ceil(content.length/5000);
+        var pkt_no = interest.getName().get(-1).getValue().toString();
+        pkt_no = parseInt(pkt_no,10);
+        var cnt = "";
+        if(pkt_no === packets-1){
+            cnt = content.slice(pkt_no*5000);
+        }else{
+            cnt = content.slice(pkt_no*5000,((pkt_no+1)*5000));
+        }
+        var data = new Data(interest.getName());
+        data.setContent(cnt);
+        data.getMetaInfo().setFreshnessPeriod(10000);
+        keyChain.sign(data, function() {
+            try {
+                face.putData(data);
+            } catch (e) {
+                console.log(e.toString());
             }
-            );
+        });
+    }
+}
+
+function onPostPackets(prefix,interest,face,interestFilterId,filter){
+    if(posts.length !== 0){
+        var content = JSON.stringify(posts);
+        
+        var packets = Math.ceil(content.length/5000);
+        var pkt_no = interest.getName().get(-1).getValue().toString();
+        pkt_no = parseInt(pkt_no,10);
+        var cnt = "";
+        if(pkt_no === packets-1){
+            cnt = content.slice(pkt_no*5000);
+        }else{
+            cnt = content.slice(pkt_no*5000,((pkt_no+1)*5000));
+        }
+        var data = new Data(interest.getName());
+        data.setContent(cnt);
+        data.getMetaInfo().setFreshnessPeriod(10000);
+        keyChain.sign(data, function() {
+            try {
+                face.putData(data);
+            } catch (e) {
+                console.log(e.toString());
+            }
+        });
+    }
+}
+
+function onUserPostPackets(prefix,interest,face,interestFilterId,filter){
+    if(userPosts.length !== 0){
+        var content = JSON.stringify(userPosts);
+        
+        var packets = Math.ceil(content.length/5000);
+        var pkt_no = interest.getName().get(-1).getValue().toString();
+        pkt_no = parseInt(pkt_no,10);
+        var cnt = "";
+        if(pkt_no === packets-1){
+            cnt = content.slice(pkt_no*5000);
+        }else{
+            cnt = content.slice(pkt_no*5000,((pkt_no+1)*5000));
+        }
+        var data = new Data(interest.getName());
+        data.setContent(cnt);
+        data.getMetaInfo().setFreshnessPeriod(10000);
+        keyChain.sign(data, function() {
+            try {
+                face.putData(data);
+            } catch (e) {
+                console.log(e.toString());
+            }
+        });
+    }
+}
+
+//call back for registering the post name
+function onPost(prefix, interest, face, interestFilterId, filter) {
+    var data = new Data(interest.getName());
+    posts = []
+    database.collection("posts").find({}).toArray((err, res) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            if (Object.keys(res).length !== 0)
+            {
+                var i;
+                posts = [];
+                var len = Object.keys(res).length;
+                for(i=0;i<Object.keys(res).length;i++){
+                    
+                    var current  = res[i];
+
+                    
+                    fs.readFile('media/post/' + res[i].imgName, gotFile.bind({current:current,posts:posts,len:len}));
+                    function gotFile(err,data){
+                        if(err){
+                            return;
+                        }
+                        let extensionName = this.current.imgName.split('.')[1];
+                        //convert image file to base64-encoded string
+                        let base64Image = new Buffer(data, 'binary').toString('base64');
+                        //combine all strings
+                        let imgSrcString = 'data:image/'+extensionName+';base64,'+base64Image;
+                        
+
+                        var  post = {};
+                        post["text"] = this.current.text;
+                        post["img"] = imgSrcString;
+                        post["username"] = this.current.username;
+                        post["like"] = this.current.like;
+                        posts.push(post);    
+                        if(posts.length === len){
+                            var content = JSON.stringify(posts);
+                            var packets = Math.ceil(content.length/5000);
+                            if(interest.getName().get(-1).getValue().toString() == "post"){
+                                var data = new Data(interest.getName());
+                                data.setContent(packets.toString());
+                                data.getMetaInfo().setFreshnessPeriod(10000);
+                                keyChain.sign(data, function() {
+                                    try {
+                                        face.putData(data);
+                                    } catch (e) {
+                                        console.log(e.toString());
+                                    }
+                                });
+
+                            }   
+                        }                  
+                    }
+
+                    
+                }
+            }
+            else{
+                var data = new Data(interest.getName());
+                var content = "No Posts";
+                data.setContent(content.toString());
+                data.getMetaInfo().setFreshnessPeriod(10000);
+                keyChain.sign(data, function() {
+                    try {
+                        face.putData(data);
+                    } catch (e) {
+                        console.log(e.toString());
+                    }
+                });
+            }
         }
     });
     
 };
 
 
+function onUserPost(prefix, interest, face, interestFilterId, filter) {
+    var data = new Data(interest.getName());
+    var username = interest.getName().get(-1).getValue().toString();
+    userPosts = [];
+    database.collection("posts").find({username:username}).toArray((err, res) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            if (Object.keys(res).length !== 0)
+            {
+                var i;
+                userPosts = [];
+                var len = Object.keys(res).length;
+                for(i=0;i<Object.keys(res).length;i++){
+                    
+                    var current  = res[i];
+
+                    
+                    fs.readFile('media/post/' + res[i].imgName, gotFile.bind({current:current,posts:posts,len:len}));
+                    function gotFile(err,data){
+                        if(err){
+                            return;
+                        }
+                        let extensionName = this.current.imgName.split('.')[1];
+                        //convert image file to base64-encoded string
+                        let base64Image = new Buffer(data, 'binary').toString('base64');
+                        //combine all strings
+                        let imgSrcString = 'data:image/'+extensionName+';base64,'+base64Image;
+                        
+
+                        var  post = {};
+                        post["text"] = this.current.text;
+                        post["img"] = imgSrcString;
+                        post["username"] = this.current.username;
+                        post["like"] = this.current.like;
+                        userPosts.push(post);    
+                        if(userPosts.length === len){
+                            console.log("Sending Posts of User");
+                            var content = JSON.stringify(userPosts);
+                            var packets = Math.ceil(content.length/5000);
+                            
+                            var data = new Data(interest.getName());
+                            data.setContent(packets.toString());
+                            data.getMetaInfo().setFreshnessPeriod(10000);
+                            keyChain.sign(data, function() {
+                                try {
+                                    face.putData(data);
+                                } catch (e) {
+                                    console.log(e.toString());
+                                }
+                            });     
+                        }                  
+                    }    
+                }
+            }
+            else{
+                var data = new Data(interest.getName());
+                var content = "No Posts";
+                data.setContent(content.toString());
+                data.getMetaInfo().setFreshnessPeriod(10000);
+                keyChain.sign(data, function() {
+                    try {
+                        face.putData(data);
+                    } catch (e) {
+                        console.log(e.toString());
+                    }
+                });
+            }
+        }
+    });
+    
+};
+
+function onUserList(prefix, interest, face, interestFilterId, filter){
+    var data = new Data(interest.getName());
+    database.collection("users").find({}).toArray((err,res)=>{
+        if(err){
+            console.log("Database error");
+            data.setContent("Could not find users");
+            data.getMetaInfo().setFreshnessPeriod(10000);
+            keyChain.sign(data, function() {
+                try {
+                    face.putData(data);
+                } catch (e) {
+                    console.log(e.toString());
+                }
+            }); 
+        }else{
+            var users = [];
+            var i = 0;
+            
+            for(i=0;i<res.length;i++){
+                users.push(res[i].username);
+            }
+            console.log("Sent User List");
+            data.setContent(JSON.stringify({users:users}));
+            data.getMetaInfo().setFreshnessPeriod(10000);
+            keyChain.sign(data, function() {
+                try {
+                    face.putData(data);
+                } catch (e) {
+                    console.log(e.toString());
+                }
+            }); 
+        }
+        
+
+    });
+}
 
 //call back function in case prefix registration fails
 function onRegisterFailed(prefix){
@@ -387,4 +861,11 @@ face.registerPrefix(new Name("/reddit/login"),onLogin,onRegisterFailed);
 face.registerPrefix(new Name("/reddit/register"), onRegister, onRegisterFailed);
 face.registerPrefix(new Name("/reddit/post"), onPost, onRegisterFailed);
 face.registerPrefix(new Name("/reddit/createPost"), onPostUpload, onRegisterFailed);
-
+face.registerPrefix(new Name("/reddit/getPosts"), onPostPackets, onRegisterFailed);
+face.registerPrefix(new Name("/reddit/getProfile"),onProfile,onRegisterFailed);
+face.registerPrefix(new Name("/reddit/getProfilePackets"),onProfilePackets,onRegisterFailed);
+face.registerPrefix(new Name("/reddit/like"),onLike,onRegisterFailed);
+face.registerPrefix(new Name("/reddit/getUserPosts"),onUserPost,onRegisterFailed);
+face.registerPrefix(new Name("/reddit/getUserPostsPackets"),onUserPostPackets,onRegisterFailed);
+face.registerPrefix(new Name("/reddit/uploadProfPic"),onPicUpload,onRegisterFailed);
+face.registerPrefix(new Name("/reddit/getUserList"),onUserList,onRegisterFailed);

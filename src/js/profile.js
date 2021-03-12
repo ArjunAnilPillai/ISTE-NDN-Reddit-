@@ -1,225 +1,245 @@
+            function newProfilePic(){
+                window.location.href = "profilePic.html";
+            }
+            var face = new Face({host: "localhost"});
+            if(getCookie("username") === ""){
+                window.location.href = "login.html";
+            }
+            window.addEventListener('load',getProfile());
+
+            function onTimeout(self,interest){
+                console.log("NDN-JS: TIMEOUT for " + interest.getName());
+            }
+            
+            function onProfileData(self,interest,data){
+                var pkts=  parseInt(data.getContent().toString());
+                var i;
+                var res = "";
+                function onIndividualPacket(self,interest,data){
+                    var result = data.getContent().toString();
+                    res += result;
+                    
+                    if(res.charAt(res.length-1) === "}".charAt(0)){
+                        res = JSON.parse(res);
+
+                        var container1=document.getElementById("profile");
+                        var div=document.createElement("div");
+                        div.setAttribute('class','d-flex flex-row card');
+                        div.setAttribute('style',"width: 80rem;");
+                        var h1 = document.createElement("h1");
+                        var button = document.createElement("a");
+                        button.textContent = "Change Profile Picture";
+                        button.setAttribute('class','active button m-auto');
+                        function changePic(){
+                            window.location.href = "profilePic.html";
+                        }
+                        button.onclick = changePic;
+                        h1.innerHTML = res.username;
+                        //div.appendChild(h2);
+                        var img=document.createElement("img");
+                        img.setAttribute('src',res.pic);
+                        img.setAttribute('class','profile-pic');
+                        img.setAttribute('width',200);
+                        img.setAttribute('height',200);
+                        //div.appendChild(img);
+                        var p=document.createElement("p");
+                        p.innerHTML=res.email;
+                        //div.appendChild(p);
+                        var div3 = document.createElement("div");
+                        div3.setAttribute('class', 'd-flex flex-column p-2');
+                        div3.appendChild(img);
+                        if(getCookie("prof_usr") === getCookie("username")){
+                            div3.appendChild(button);
+                        }
+                        
+                        var div2 = document.createElement("div");
+                        div2.setAttribute('style','margin:20px;');
+                        div2.appendChild(h1);
+                        div2.appendChild(p);
+                        div.appendChild(div3);
+                        div.appendChild(div2);
+                        container1.appendChild(div);  
+                    }
+                }
+                
+                for(i=0;i<pkts;i++){
+                    interest = new Interest(new Name("/reddit/getProfilePackets").append(i.toString()));
+                    interest.setMustBeFresh(true);
+                    face.expressInterest(interest,function(interest,data){
+                        onIndividualPacket(self,interest,data);
+                    },function(interest){
+                        onTimeout(self,interest);
+                    });
+                }  
+            }
 
 
-function onLoad(){
+            function onUserPostData(self,interest,data){
+                console.log(data.getContent().toString());
+                if(data.getContent().toString() === "No Posts"){
+                    var container=document.getElementById("posts");
+                    var div=document.createElement("div");
+                    div.setAttribute('class',"card border-dark");
+                    div.setAttribute('style',"width: 80rem;");
+                    div.innerHTML += "<h3 class='p-2 text-center'>No Posts</h3>";
+                    container.appendChild(div);
+                    return;
+                }
+                var pkts=  JSON.parse(data.getContent().toString());
+                var i;
+                var res = "";
+                function onIndividualPacket(self,interest,data){
+                    var result = data.getContent().toString();
+                    res += result;
+                    
+                    if(res.charAt(res.length-1) === "]".charAt(0)){
+                        res = JSON.parse(res);
 
-	Promise.resolve()
-	.then(function(){
-		return $.post('GetDetails');
-	})
-	.then(function(userInfo){
-		var user = userInfo[0]
-		$('#info-container').prepend(
-			'<a href="" class="">' +
-            '<img src="'+ user.profilePicture +'" class="profile-image"></img>' +
-            '</a>' +
-            '<div>' +
-            '<a class="profile-name" href="">' + user.username + '</a>'+
-            '</div>' +
-            '<div>' +
-            '<a class="profile-info" href="">' + user.email + '</a>'+
-            '</div>'
-			
-		);
+                        var container=document.getElementById("posts");
+                        console.log(res.length);
+                        
+                        for (var i = 0; i < res.length; i++) {
+                            var current= res[i];
+                            var div=document.createElement("div");
+                            div.setAttribute('class',"card border-dark");
+                            div.setAttribute('style',"width: 80rem;");
+                            div.innerHTML += '<h5 class="card-header">Posted by '+ current.username + '</h5>'+
+                            '<div class="card-body">'+
+                            '<h3 class="card-title">' + current.text + '</h3>'+
+                            '</div>'+
+                            '<hr style="margin: 0 0 20 0;">'+
+                            '<img class="card-img-bottom" height="100%" width="80%" style="padding-left: 10%; padding-right: 10%; padding-bottom" src='+ current.img+' alt="Post Image">';
+                    
+                            
+                            var likeBtn = document.createElement("button");
+                            
+                            var div1 = document.createElement("div");
+                            div1.setAttribute('class','card-footer d-flex flex-row');
+                            var h4 = document.createElement("h4");
+                            h4.setAttribute('class','p-2');
+                            h4.setAttribute('id','likecount'+i.toString());
+                            h4.textContent = current.like.length.toString();
+                            likeBtn.textContent = 'Like';
+                            console.log(likeBtn);
+                            if(res[i].like.includes(getCookie("username"))){
+                                likeBtn.disabled = true;
+                                h4.style.color = 'blue';
+                            }
+                            
+                            function onLikeResponse(self,interest,data){
+                                console.log('here');
+                                var result = data.getContent().toString();
+                                console.log(result);
+                                if( result === "Liked"){
+                                    console.log(result);
+                                    
+                                }
+                            }
+                            function likeClick() {
+                                console.log('here');
+                                var likes = parseInt(this.current.like.length.toString,10);
+                                interest = new Interest(new Name("/reddit/like").append(this.current.text).append(getCookie("username")));
+                                interest.setMustBeFresh(true);
+                                console.log(likes);
+                                this.h4.textContent = (parseInt(this.h4.innerHTML.toString(),10)+1).toString();
+                                this.h4.style.color = 'blue';
+                                this.likeBtn.disabled = true;
+                                face.expressInterest(interest,function(interest,data){
+                                    onLikeResponse(self,interest,data);
+                                },function(interest){
+                                    onTimeout(self,interest);
+                                });
+                            }
+                        
+                            likeBtn.onclick = likeClick.bind({current:res[i],likeBtn:likeBtn,h4:h4});
+                            
+                            div1.appendChild(likeBtn);
+                            div1.appendChild(h4);
+                            div.appendChild(div1);
+                            container.appendChild(div);
+                            /*var current= res[i];
+                            var div=document.createElement("div");
+                            var h2 = document.createElement("h2");
 
-		Promise.resolve()
-		.then(function(){
-			return $.post('GetUserPosts');
-		})
-		.then(function(posts){
-			posts.forEach(function(post){
-            Promise.resolve()
-            .then(function(posts){
-        
-              var feedBlockTemplate = "";
-              var likesText = (post.likeCount > 1)? "likes": "like";
-              
-              $('#profile-container').prepend(
-                '<div class="feed-block" data-postId="' + post._id + '">' +
-                '  <div class="feed-header">' +
-                '    <a href="" class="feed-time">' +
-                '      <time>' + post.datePosted + '</time>' +
-                '    </a>' +
-                '  </div>' +
-                '  <a href="" class="feed-image">' +
-                '    <img src="'+ post.imageURL +'" class="img-responsive" alt="">' +
-                '  </a>' +
-                '  <div class="feed-body">' +
-                '    <p href="" class="likes"><span id ="like' + post._id + '">'+ post.likeCount +'</span> '+ likesText +'</p>' +
-                '    <ul class="comment-list">' +
-                '      <li>' +
-                '        <a class="feed-user" href="">' +
-                '          {username}' +
-                '        </a>' + post.caption +'</li></ul>' +
-                '    <div class="add-comment">' +
-                '      <a class="fa fa-heart-o like-photo" onclick="likeClick(\'' + post._id + '\');"></a>' +
-                '      <a class="fa fa-comment like-photo" onclick="commentClick(\''+ post._id + '\');"></a>'+
-                '      <form id="commentform'+post._id+'" class="add-comment-form">' +
-                '        <input type="text" placeholder="Add a comment..." class="add-comment-input" name=""/>' +
-                '      </form>' +
-                '    </div>' +
-                '  </div>' +
-                '</div>' 
-              );
-              
-              Promise.resolve()
-              .then(function(){
-                return($.post('GetUserDetails',{id : post.userID}));
-              })
-              .then(function(userInfo){
-                  var user = userInfo[0];
-                  $("[data-postid='" + post._id + "']").find(".feed-user").text(user.username);
-                  $("[data-postid='" + post._id + "']").find(".feed-header").prepend(
-                      '<a href="" class="feed-avatar">' +
-                      '      <img src="'+ user.profilePicture +'" class="feed-avatar-image small"></img>' +
-                      '    </a>' +
-                      '    <div class="feed-info">' +
-                      '      <a class="feed-user" href="">' + user.username + '</a></div>'
-                  );
-              })
-              .then(function(){
-                return ($.post('GetAllComments',{id : post._id}));
-              })
-              .then(function(comments){
-                comments.forEach(function(entry){
-                   console.log(entry); 
-                   $("[data-postid='" + post._id + "']").find(".comment-list").append(
-                    '      <li>' +
-                    '        <a class="feed-user" href="">' + entry.username + '</a>'+
-                             entry.content + '</li></ul>'
-                   );
+                            h2.innerHTML = res[i].username;
+                            div.appendChild(h2);
+                            var img=document.createElement("img");
+                            img.setAttribute('src',res[i].img);
+                            img.setAttribute('width',200);
+                            img.setAttribute('height',200);
+                            div.appendChild(img);
+                            var p=document.createElement("p");
+                            p.innerHTML=res[i].text;
+                            div.appendChild(p);
+                            var likeBtn = document.createElement("button");
+                            likeBtn.textContent = res[i].like.length.toString();
+                            
+                            if(res[i].like.includes(getCookie("username"))){
+                                likeBtn.disabled = true;
+                                likeBtn.style.color = "blue";
+                            }
+                            function onLikeResponse(self,interest,data){
+                                var result = data.getContent().toString();
+                                console.log(result);
+                                if( result === "Liked"){
+                                    console.log(result);
+                                    likeBtn.textContent = (parseInt(likeBtn.textContent.toString(),10)+1).toString();
+                                    likeBtn.disabled = true;
+                                }
+                            }
+                            function likeClick() {
+                                console.log('here');
+                                var likes = parseInt(this.current.like.length.toString(),10);
+                                interest = new Interest(new Name("/reddit/like").append(this.current.text).append(getCookie("username")));
+                                interest.setMustBeFresh(true);
+                                console.log(likes);
+                                face.expressInterest(interest,function(interest,data){
+                                    onLikeResponse(self,interest,data);
+                                },function(interest){
+                                    onTimeout(self,interest);
+                                });
+                            }
+                            likeBtn.onclick = likeClick.bind({current:res[i]});
+                            
+                            //
+                            div.appendChild(likeBtn);
+                            container.appendChild(div);*/
+
+                        }
+                    }
+                }
+                for(i=0;i<pkts;i++){
+                    interest = new Interest(new Name("/reddit/getUserPostsPackets").append(i.toString()));
+                    interest.setMustBeFresh(true);
+                    face.expressInterest(interest,function(interest,data){
+                        onIndividualPacket(self,interest,data);
+                    },function(interest){
+                        onTimeout(self,interest);
+                    });
+                }   
+            }
+            window.onload = function(){
+                var usr = document.getElementById("usr");
+                usr.innerHTML = getCookie("username");
+            }
+
+
+            function getProfile(){
+                interest = new Interest(new Name("/reddit/getProfile").append(getCookie("prof_usr")));
+                interest.setMustBeFresh(true);
+                face.expressInterest(interest,function(interest,data){
+                    onProfileData(self,interest,data);
+                },function(interest){
+                    onTimeout(self,interest);
                 });
-              })
-              /*.then(function(){
-                  return ($.post('GetAllHashtag',{id : post._id}));
-              })
-              .then(function(hashtags){
-                $("[data-postid='" + post._id + "']").find(".comment-list li:first-child").append(
-                  '      <li class="comment-hashtags">' +
-                  '        <a class="feed-user" href="">' + $(".feed-block:last-child .comment-list li:first-child .feed-user").text() + '</a>'+
-                  '</li></ul>'
-                 );
-                hashtags.forEach(function(hashtag){
-                  console.log(hashtag); 
-                  $(".feed-block:last-child .comment-hashtags").append(
-                    '<a class="hashtag">#' +hashtag.tag  + '</a>'
-                  ); 
+
+
+
+                interest = new Interest(new Name("/reddit/getUserPosts").append(getCookie("prof_usr")));
+                interest.setMustBeFresh(true);
+                face.expressInterest(interest,function(interest,data){
+                    onUserPostData(self,interest,data);
+                },function(interest){
+                    onTimeout(self,interest);
                 });
-              })*/
-              .catch(function(err){
-                //always include a catch for exceptions
-                console.log(err);
-              });
-            })
-            .catch(function(err){
-              //always include a catch for exceptions
-              console.log(err);
-            });
-        });
-		})
-	})
-	.catch(function(err){
-		console.log(err);
-	});
-}
-
-function likeClick(id){
-    event.preventDefault();
-    console.log('liked')
-    Promise.resolve()
-    .then(function(){
-        //jQuery provides a nice convenience method for easily sending a post with parameters in JSON
-        //here we pass the ID to the incrLike route on the server side so it can do the incrementing for us
-        //note the return. This MUST be here, or the subsequent then will not wait for this to complete
-        return $.post('incrLike', {id : id});
-    })
-    .then(function(like){
-        //jQuery provides a nice convenience methot for easily setting the count to the value returned
-       if(like.count != -1){
-         document.getElementById('like' + like.id).innerHTML = like.count
-       } else {
-         alert("You liked this post already.");
-       }
-       
-       
-    })
-    .catch(function(err){
-        //always include a catch for the promise chain
-        console.log(err);
-    });
-}
-
-function commentClick(id){
-	event.preventDefault();
-	console.log('comment');
-	var comment = document.getElementById('commentform'+id);
-	var input = comment.getElementsByTagName('input');
-	Promise.resolve()
-	.then(function(){
-		return $.post('uploadComment',{id:id,comment:input[0].value})
-	}).then(function(){
-		window.location.reload();
-	})
-}
-
-
-
-function updateNameClick(){
-	event.preventDefault();
-	console.log('updatename');
-	var name = document.getElementById('uploadForm2');
-	var newName = name.getElementsByTagName('input');
-	Promise.resolve()
-	.then(function(){
-		return $.post('updateName',{name:newName[0].value})
-	}).then(function(){
-		window.location.reload();
-	})
-}
-
-
-function uploadClick(){
-    //go get the data from the form
-    var form = new FormData($("#uploadForm")[0]);
-    //we can post this way as well as $.post
-    $.ajax({
-            url: '/upload',
-            method: "POST",
-            dataType: 'json',
-            //the form object is the data
-            data: form,
-            //we want to send it untouched, so this needs to be false
-            processData: false,
-            contentType: false,
-            //add a message 
-            success: function(result){
-              setTimeout(function(){
-                window.location.reload(true);
-              },1000);
-            },
-            error: function(er){}
-    });            
-}
-
-function uploadProfileClick(){
-    //go get the data from the form
-    var form = new FormData($("#uploadForm1")[0]);
-    //we can post this way as well as $.post
-    $.ajax({
-            url: '/uploadProfile',
-            method: "POST",
-            dataType: 'json',
-            //the form object is the data
-            data: form,
-            //we want to send it untouched, so this needs to be false
-            processData: false,
-            contentType: false,
-            //add a message 
-            success: function(result){
-              setTimeout(function(){
-                window.location.reload(true);
-              },1000);
-            },
-            error: function(er){}
-    });            
-}
-
+            }

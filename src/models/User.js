@@ -17,6 +17,11 @@ const UserSchema = new mongoose.Schema({
     date: {
         type: Date,
         default:Date.now
+    },
+    profilePic:
+    {
+    	type:String,
+    	default:"default.jpeg"
     }
 });
 

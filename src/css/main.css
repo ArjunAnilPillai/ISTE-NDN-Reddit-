@@ -4,14 +4,26 @@
 
 a,
 a:hover { text-decoration: none !important; }
-body { background:#fafafa; }
+body { background:#DAE0E6; }
 
 header { background:#ffec45 center no-repeat; line-height: 76px; margin-bottom: 30px; background-size:12%; border-bottom:1px solid rgba(0,0,0,.0975); position:fixed; left:0; width:100%; top:0; z-index:99; }
 .logo { font-size: medium; display:block; }
 .logo-icon { color:#000; vertical-align: middle; border-right: 1px solid black; padding-right:17px; margin-top: -3px; font-size:35px; }
 .logo-text { height: 85px; margin: 5px 0 0 5px; }
 .rightmenu{ margin-left:20px; color:black; vertical-align: middle; }
-    
+
+a.button {
+    -webkit-appearance: button;
+    -moz-appearance: button;
+    appearance: button;
+
+   
+    color: white !important; 
+    background-color: #FF5700;
+    padding: 12px ;
+    border-radius: 5px;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
 .main-feed { padding-top:100px;}
 
 .feed-block { background:#fff; display:block; margin:0 auto 60px; overflow:hidden; float: none !important; border-radius:3px; border:1px solid #e6e6e6; }
@@ -43,6 +55,10 @@ header { background:#ffec45 center no-repeat; line-height: 76px; margin-bottom: 
 .feed-image img { min-width:633px }
 .feed-body { float:left;padding: 0 24px; clear:both; overflow:hidden; }
 
+
+.card{
+    margin-bottom: 2%;
+}
 .likes {margin-bottom:10px; margin-top:20px; font-weight: 600; }
 .comment-list { padding:0; list-style:none; }
 .hashtag { margin-right: 5px;}
@@ -60,8 +76,55 @@ header { background:#ffec45 center no-repeat; line-height: 76px; margin-bottom: 
 .logolink:hover { text-decoration: none; }
 .rightmenu:hover { text-decoration: none; color:black; }
 
+.profile-pic{
+    border-radius: 50%;
+    margin: 20px;
+}
+
+
+
+.autocomplete { width:100%;}
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9;
+}
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
+
+
+
 @media (max-width: 1024px) {
     header { background-image:none; }
     .rightmenu { display: none;}
     .feed-image img { min-width:auto; }
 }
+
+footer {
+    left: 0;
+    bottom: 0 !important;
+    padding:2%;
+    width: 100%;
+    background-color: #FF5700;
+    color: white;
+    text-align: center;
+ }

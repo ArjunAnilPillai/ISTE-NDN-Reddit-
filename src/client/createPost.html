@@ -3,24 +3,23 @@
         <meta charset="UTF-8">
         <title>Create Post</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <link rel="stylesheet" href="../css/bootstrap.min.css?v2">
         <link rel="stylesheet" href="../css/bootstrap-theme.min.css">
         <link rel="stylesheet" href="../css/font-awesome.min.css">
         <link rel="stylesheet" href="../css/main.css">
         <link rel="stylesheet" href="../css/login.css">
     </head>
-    <body onload="" class="clearfix">
+    <body onload="" class="">
         <script type="text/javascript" src="../ndn-js/build/ndn.js"></script>
-        <script type="text/javascript">
-            var face = new Face({host: "localhost"});
+        <script type="text/javascript" src="../js/cookie.js"></script>
+        <script type="text/javascript" src="../js/createPost.js"></script>
+            <!--var face = new Face({host: "localhost"});
 
             function onTimeout(self,interest){
                 console.log("NDN-JS: TIMEOUT for " + interest.getName());
             }
-            function onPostUploadData(self,interest,data){
-                var res=data.getContent().toString();
-                console.log(res);
-            }
+            
             // function onLoginData(self,interest,data){
             //     var res = data.getContent().toString()
             //     console.log(res);
@@ -36,17 +35,35 @@
             function createPost(){
                 var ptitleVal = document.getElementById('ptitle').value;
                 var pimageVal = document.getElementById('pimage').value;
-                var post = {text:ptitleVal,imgURL:pimageVal};
-                interest = new Interest(new Name("/reddit/createPost").append(post.text));
+                var post = {ptitle:ptitleVal,pimage:pimageVal};
+                interest = new Interest(new Name("/reddit/createPost").append(post.ptitle));
                 interest.setMustBeFresh(true);
                 interest.setParameters(new Blob(JSON.stringify(post)));
                 face.expressInterest(interest,function(interest,data){
-                    onPostUploadData(self,interest,data);
+                    onLoginData(self,interest,data);
                 },function(interest){
                     onTimeout(self,interest);
                 });
-            }
-        </script>
+            }*/-->
+        
+        <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light d-flex">
+                <a class="navbar-brand p-2" href="#"><img src="../img/Reddit-Logo.png" width="30" height="30" alt="" style="margin-right: 10px;" class="d-inline-block"/>NDN-Reddit</a>
+                <span class="navbar-text ml-auto">
+                    <ul class="nav">
+                        <li class="nav-item" style="padding: 12px; font-size: large; color: black;">
+                            <p id="usr"></p>   
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active button" style="margin-right: 10px;" aria-current="page" href="home.html">Home</a>   
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active button" style="margin-right: 10px;" aria-current="page" onclick="viewProfile()" >Profile</a> 
+                        </li>
+                    </ul>
+                   
+                </span>
+
+            </nav>
 
         <main>
             <div class="container">
@@ -69,7 +86,7 @@
             
             
         </main>
-
+        
         <script src="../js/jquery.min.js"></script>
         <script src="../js/login.js"></script>
     </body>

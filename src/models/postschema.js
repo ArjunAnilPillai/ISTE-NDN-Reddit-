@@ -3,9 +3,10 @@ var schema = mongoose.Schema ;
 
 var postschema = new schema ({
 text: String ,
-imgURL : String ,
-likecount : Number ,
+imgName : String ,
+like : [],
 time : { type : Date, default: Date.now } ,
+username: String,
 }
 );
 
