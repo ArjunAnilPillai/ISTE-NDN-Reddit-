@@ -2,6 +2,11 @@
                 setCookie("prof_usr",getCookie("username"));
                 window.location.href = "profile.html"
             }
+            function logout(){
+                setCookie("username","");
+                console.log(getCookie("username"));
+                window.location.href = "login.html"
+            }
             function viewUserProfile(username){
                 setCookie("prof_usr",username);
                 window.location.href = "profile.html"

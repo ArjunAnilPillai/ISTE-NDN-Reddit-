@@ -10,7 +10,11 @@
             function onTimeout(self,interest){
                 console.log("NDN-JS: TIMEOUT for " + interest.getName());
             }
-            
+            function logout(){
+                setCookie("username","");
+                console.log(getCookie("username"));
+                window.location.href = "login.html"
+            }
             function onProfileData(self,interest,data){
                 var pkts=  parseInt(data.getContent().toString());
                 var i;
