@@ -68,6 +68,8 @@
                     
                             
                             var likeBtn = document.createElement("button");
+                            likeBtn.setAttribute('style', "color:black; border: none; background-color: transparent;");
+                            likeBtn.innerHTML += '<i class="fa fa-arrow-up" aria-hidden="true"></i>';
                             
                             var div1 = document.createElement("div");
                             div1.setAttribute('class','card-footer d-flex flex-row');
@@ -79,7 +81,8 @@
                             console.log(likeBtn);
                             if(res[i].like.includes(getCookie("username"))){
                                 likeBtn.disabled = true;
-                                h4.style.color = 'blue';
+                                h4.style.color = 'green';
+                                likeBtn.style.color = 'green';
                             }
                             
                             function onLikeResponse(self,interest,data){
@@ -100,6 +103,7 @@
                                 this.h4.textContent = (parseInt(this.h4.innerHTML.toString(),10)+1).toString();
                                 this.likeBtn.disabled = true;
                                 this.h4.style.color = 'blue';
+                                this.likeBtn.style.color = 'green';
                                 face.expressInterest(interest,function(interest,data){
                                     onLikeResponse(self,interest,data);
                                 },function(interest){
