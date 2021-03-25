@@ -102,7 +102,7 @@
                                 console.log(likes);
                                 this.h4.textContent = (parseInt(this.h4.innerHTML.toString(),10)+1).toString();
                                 this.likeBtn.disabled = true;
-                                this.h4.style.color = 'blue';
+                                this.h4.style.color = 'green';
                                 this.likeBtn.style.color = 'green';
                                 face.expressInterest(interest,function(interest,data){
                                     onLikeResponse(self,interest,data);
