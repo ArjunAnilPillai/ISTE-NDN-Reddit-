@@ -4,7 +4,7 @@ The primary goal of this project was to design a proof of concept of a social me
 ## Literature review
 https://drive.google.com/file/d/1icZBiNvRZWKLhWpFFPf34_f7TIUyUGPZ/view?usp=sharing
 ## Presentation
-https://docs.google.com/presentation/d/1rm2zzoVaUn_pTDDI4KLXiOfMkSSuW4ccPpzatQmt8Sc/edit?usp=sharing
+https://docs.google.com/presentation/d/1Oq8pXWjFezB2xaOIhqSWqgdeML1dFVRtTKQU1ZBXVFw/edit?usp=sharing
 ## How To Run
 ### Prerequisites
 1. Install NDN-CXX by following the instructions at this page:
